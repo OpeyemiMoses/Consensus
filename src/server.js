@@ -1,0 +1,59 @@
+﻿import "dotenv/config";
+import express from "express";
+import cors from "cors";
+import riskConsensusRouter from "./routes/riskConsensus.js";
+import coverageMatchRouter from "./routes/coverageMatch.js";
+import a2aRouter from "./a2a/a2aRoutes.js";
+import devPaidProxyRouter from "./payments/devPaidProxyRoutes.js";
+import mcpRouter from "./mcp/httpMcpRouter.js";
+import { getPaymentMiddleware } from "./payments/x402Setup.js";
+
+const app = express();
+const PORT = process.env.PORT || 3001;
+
+app.use(cors());
+app.use(express.json());
+
+app.get("/health", (req, res) => res.json({ status: "ok", service: "consensus" }));
+
+// Payment middleware setup is async (it validates OKX credentials against
+// the facilitator over the network, which can be slow or fail entirely —
+// see getPaymentMiddleware's own safe-fallback behavior). We still want it
+// positioned *before* the priced routers in the middleware stack so it can
+// gate them once ready, but we do NOT want server startup (app.listen) to
+// block on that network call — a slow/failing facilitator fetch shouldn't
+// delay the server coming up and answering /health, /api/mcp, /api/a2a,
+// etc., which don't depend on payments at all.
+//
+// So: mount a synchronous wrapper middleware immediately, in the correct
+// stack position, that defers to the real middleware once it resolves.
+let realPaymentMw = null;
+const paymentMwReady = getPaymentMiddleware()
+  .then((mw) => {
+    realPaymentMw = mw;
+  })
+  .catch((err) => {
+    console.error("[x402] Failed to initialize payment middleware:", err.message);
+    // Fall through to a no-op — same "keep the rest of the app working"
+    // behavior getPaymentMiddleware itself already documents.
+    realPaymentMw = (req, res, next) => next();
+  });
+
+app.use((req, res, next) => {
+  if (realPaymentMw) return realPaymentMw(req, res, next);
+  paymentMwReady.then(() => realPaymentMw(req, res, next)).catch(next);
+});
+
+app.use("/api", riskConsensusRouter);
+app.use("/api", coverageMatchRouter);
+app.use("/api", a2aRouter);
+app.use("/api", devPaidProxyRouter);
+
+// httpMcpRouter.js defines its route internally as POST /mcp, so mounting
+// it at /api here gives the full path /api/mcp — matching what testMcp.js
+// (and any real A2MCP caller) expects.
+app.use("/api", mcpRouter);
+
+app.listen(PORT, () => {
+  console.log(`Consensus backend listening on port ${PORT}`);
+});

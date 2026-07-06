@@ -1,0 +1,50 @@
+{
+  "aave-v3": {
+    "audited": true,
+    "auditors": ["OpenZeppelin", "Trail of Bits", "SigmaPrime"],
+    "lastAuditDate": "2023-01-01",
+    "knownUnpatchedFindings": false,
+    "adminKeyRisk": "DAO-governed timelock, no single admin key",
+    "notes": "Long production history across multiple chains without a protocol-level exploit."
+  },
+  "uniswap-v3": {
+    "audited": true,
+    "auditors": ["Trail of Bits", "ABDK"],
+    "lastAuditDate": "2021-03-01",
+    "knownUnpatchedFindings": false,
+    "adminKeyRisk": "Core contracts largely immutable; governance controls fee switch only",
+    "notes": "One of the most forked and scrutinized AMM designs in DeFi."
+  },
+  "curve-finance": {
+    "audited": true,
+    "auditors": ["Trail of Bits", "MixBytes"],
+    "lastAuditDate": "2020-08-01",
+    "knownUnpatchedFindings": false,
+    "adminKeyRisk": "DAO-governed, admin actions subject to timelock",
+    "notes": "Had a high-profile Vyper compiler exploit in 2023 affecting some pools (not a Curve code bug per se) — worth surfacing to The Historian even though it's not a Curve-authored vulnerability."
+  },
+  "gmx": {
+    "audited": true,
+    "auditors": ["ABDK"],
+    "lastAuditDate": "2021-08-01",
+    "knownUnpatchedFindings": false,
+    "adminKeyRisk": "Multisig-governed, live primarily on Arbitrum",
+    "notes": "Native to Arbitrum — useful demo candidate if Arbitrum is one of the final demo chains."
+  },
+  "compound-v3": {
+    "audited": true,
+    "auditors": ["OpenZeppelin", "ChainSecurity"],
+    "lastAuditDate": "2022-07-01",
+    "knownUnpatchedFindings": false,
+    "adminKeyRisk": "Governance-controlled, timelock on parameter changes",
+    "notes": "Mature lending protocol, deployed across Ethereum and several L2s."
+  },
+  "example-unaudited-fork": {
+    "audited": false,
+    "auditors": [],
+    "lastAuditDate": null,
+    "knownUnpatchedFindings": null,
+    "adminKeyRisk": "Single EOA admin key with no timelock (deployer wallet)",
+    "notes": "Placeholder entry representing a typical low-effort fork for testing persona divergence against a clearly risky case."
+  }
+}

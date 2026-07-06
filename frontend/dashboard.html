@@ -1,0 +1,412 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Consensus — Dashboard</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@500;600;700;800&family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0a0a0d;
+    --bg-elevated: #121218;
+    --bg-card: #16161d;
+    --bg-track: #1e1e26;
+    --border: rgba(255,255,255,0.09);
+    --border-strong: rgba(255,255,255,0.16);
+    --text: #f2f0ec;
+    --text-dim: #a4a3ac;
+    --text-faint: #616069;
+
+    --aurora-purple: #7c6ce8;
+    --aurora-teal: #2fc7ae;
+    --aurora-pink: #d66bc0;
+
+    --auditor: #d9ac48;
+    --liquidity: #35bda8;
+    --historian: #9c82ea;
+
+    --danger: #d4726a;
+    --ok: #4fbf9a;
+
+    --radius-sm: 12px;
+    --radius-md: 20px;
+    --radius-lg: 28px;
+    --radius-pill: 100px;
+  }
+
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Inter', sans-serif;
+    font-size: 15px;
+    line-height: 1.6;
+  }
+  @media (prefers-reduced-motion: reduce) { * { animation-duration: 0.01ms !important; transition-duration: 0.01ms !important; } }
+
+  h1, h2, h3 { font-family: 'Outfit', sans-serif; margin: 0; letter-spacing: -0.02em; }
+  .mono { font-family: 'IBM Plex Mono', monospace; }
+
+  /* ---- aurora accent, echoing landing page but much quieter ---- */
+  .aurora-strip {
+    position: absolute; inset: 0 0 auto 0; height: 340px;
+    overflow: hidden; pointer-events: none; z-index: 0;
+  }
+  .aurora-strip .blob {
+    position: absolute; border-radius: 50%; filter: blur(90px); opacity: 0.28; mix-blend-mode: screen;
+  }
+  .aurora-strip .b1 { width: 380px; height: 380px; background: var(--aurora-purple); top: -180px; left: -100px; }
+  .aurora-strip .b2 { width: 320px; height: 320px; background: var(--aurora-teal); top: -140px; right: -80px; }
+
+  nav {
+    position: relative; z-index: 1;
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 22px 28px;
+  }
+  .brand { display: flex; align-items: center; gap: 8px; font-weight: 700; font-size: 18px; font-family: 'Outfit', sans-serif; }
+  .brand .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--text); display: inline-block; }
+  .back-link {
+    display: inline-flex; align-items: center; gap: 6px;
+    color: var(--text-dim); text-decoration: none;
+    font-family: 'IBM Plex Mono', monospace; font-size: 12px;
+    padding: 8px 16px; border-radius: var(--radius-pill);
+    border: 1px solid var(--border); transition: all 200ms ease;
+  }
+  .back-link:hover { color: var(--text); border-color: var(--border-strong); }
+
+  .wrap { max-width: 860px; margin: 0 auto; padding: 20px 24px 90px; position: relative; z-index: 1; }
+
+  .hero-copy { text-align: center; padding: 20px 0 40px; }
+  .hero-copy h1 { font-size: clamp(28px, 4.5vw, 40px); margin-bottom: 10px; }
+  .hero-copy p { color: var(--text-dim); font-family: 'IBM Plex Mono', monospace; font-size: 13px; text-transform: uppercase; letter-spacing: 0.06em; }
+
+  .panel {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    padding: 30px;
+    margin-bottom: 24px;
+  }
+  .panel h2 {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 12px; text-transform: uppercase; letter-spacing: 0.08em;
+    color: var(--text-faint); margin: 0 0 20px; font-weight: 500;
+  }
+
+  form { display: flex; gap: 12px; flex-wrap: wrap; align-items: flex-end; }
+  .field { display: flex; flex-direction: column; gap: 7px; flex: 1; min-width: 140px; }
+  label { font-size: 11px; color: var(--text-faint); font-family: 'IBM Plex Mono', monospace; text-transform: uppercase; letter-spacing: 0.05em; }
+  input {
+    background: var(--bg-elevated);
+    border: 1px solid var(--border);
+    color: var(--text);
+    padding: 12px 16px;
+    border-radius: var(--radius-sm);
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 14px;
+  }
+  input:focus { outline: none; border-color: var(--aurora-teal); }
+  input::placeholder { color: var(--text-faint); }
+
+  .btn {
+    display: inline-flex; align-items: center; gap: 8px;
+    padding: 13px 24px;
+    border-radius: var(--radius-pill);
+    font-family: 'Inter', sans-serif; font-weight: 600; font-size: 14px;
+    border: 1px solid transparent; cursor: pointer;
+    transition: transform 220ms cubic-bezier(0.2,0.9,0.3,1.2), background 200ms ease, opacity 200ms ease;
+  }
+  .btn:hover { transform: translateY(-2px); }
+  .btn-primary { background: var(--text); color: var(--bg); }
+  .btn-primary:hover { background: #fff; }
+  .btn-primary:disabled { opacity: 0.5; cursor: wait; transform: none; }
+
+  .config-row { display: flex; gap: 10px; margin-top: 14px; }
+  .config-row .field { flex: none; width: 260px; }
+
+  .status-line {
+    font-family: 'IBM Plex Mono', monospace; font-size: 12px; color: var(--text-faint);
+    margin-top: 12px; min-height: 16px;
+  }
+  .status-line.error { color: var(--danger); }
+
+  .tracks { display: none; }
+  .tracks.visible { display: block; }
+
+  .track-row { margin-bottom: 26px; }
+  .track-label { display: flex; justify-content: space-between; font-family: 'IBM Plex Mono', monospace; font-size: 12px; margin-bottom: 10px; }
+  .track-name { display: flex; align-items: center; gap: 8px; color: var(--text-dim); }
+  .swatch { width: 8px; height: 8px; border-radius: 50%; display: inline-block; }
+  .track-score { font-weight: 600; color: var(--text); }
+
+  .track { position: relative; height: 8px; background: var(--bg-track); border-radius: var(--radius-pill); overflow: visible; }
+  .track-fill { position: absolute; top: 0; left: 0; height: 100%; width: 0%; border-radius: var(--radius-pill); opacity: 0.35; transition: width 900ms cubic-bezier(0.16,1,0.3,1); }
+  .track-dot {
+    position: absolute; top: 50%; left: 50%;
+    width: 14px; height: 14px; border-radius: 50%;
+    transform: translate(-50%, -50%);
+    transition: left 900ms cubic-bezier(0.16,1,0.3,1);
+    box-shadow: 0 0 0 4px var(--bg-card), 0 0 14px currentColor;
+  }
+  .scale-ticks { display: flex; justify-content: space-between; font-family: 'IBM Plex Mono', monospace; font-size: 10px; color: var(--text-faint); margin-top: 6px; }
+
+  .rationale {
+    font-size: 13.5px; color: var(--text-dim); margin-top: 14px;
+    padding: 14px 16px; background: var(--bg-elevated);
+    border-radius: var(--radius-sm); border-left: 3px solid var(--accent, var(--border-strong));
+  }
+
+  .consensus-readout { text-align: center; padding: 34px 0 8px; border-top: 1px solid var(--border); margin-top: 10px; }
+  .consensus-number { font-family: 'Outfit', sans-serif; font-weight: 700; font-size: 60px; line-height: 1; }
+  .consensus-label { font-family: 'IBM Plex Mono', monospace; font-size: 11px; text-transform: uppercase; letter-spacing: 0.08em; color: var(--text-faint); margin-top: 8px; }
+  .scale-legend { font-family: 'IBM Plex Mono', monospace; font-size: 10px; color: var(--text-faint); margin-top: 6px; letter-spacing: 0.02em; }
+  .confidence-badge {
+    display: inline-block; margin-top: 16px; padding: 7px 16px;
+    border-radius: var(--radius-pill); font-family: 'IBM Plex Mono', monospace;
+    font-size: 11px; text-transform: uppercase; letter-spacing: 0.05em; border: 1px solid var(--border);
+  }
+  .confidence-badge.high { color: var(--ok); border-color: var(--ok); background: rgba(79,191,154,0.08); }
+  .confidence-badge.moderate { color: var(--auditor); border-color: var(--auditor); background: rgba(217,172,72,0.08); }
+  .confidence-badge.low { color: var(--danger); border-color: var(--danger); background: rgba(212,114,106,0.08); }
+
+  .disagreement-note { max-width: 480px; margin: 16px auto 0; font-size: 13px; color: var(--text-dim); text-align: center; }
+
+  .empty-state { text-align: center; padding: 50px 20px; color: var(--text-faint); font-family: 'IBM Plex Mono', monospace; font-size: 13px; }
+
+  .coverage-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+  @media (max-width: 640px) { .coverage-grid { grid-template-columns: 1fr; } .config-row { flex-direction: column; } .config-row .field { width: 100%; } }
+
+  .coverage-card {
+    border: 1px solid var(--border); border-radius: var(--radius-md);
+    padding: 18px; background: var(--bg-elevated);
+    transition: transform 250ms ease, border-color 250ms ease;
+  }
+  .coverage-card:hover { transform: translateY(-3px); border-color: var(--border-strong); }
+  .coverage-card h3 { font-family: 'Outfit', sans-serif; font-size: 16px; margin: 0 0 8px; }
+  .coverage-card p { font-size: 12.5px; color: var(--text-dim); margin: 4px 0; }
+  .coverage-card .verify-flag { color: var(--auditor); font-size: 11px; margin-top: 10px; font-family: 'IBM Plex Mono', monospace; }
+
+  .disclaimer { font-size: 11px; color: var(--text-faint); text-align: center; margin-top: 40px; }
+</style>
+</head>
+<body>
+
+<div class="aurora-strip"><div class="blob b1"></div><div class="blob b2"></div></div>
+
+<nav>
+  <div class="brand"><span class="dot"></span>Consensus</div>
+  <a href="index.html" class="back-link">&larr; back to overview</a>
+</nav>
+
+<div class="wrap">
+  <div class="hero-copy">
+    <h1>Dashboard</h1>
+    <p>run a live check against the persona engine</p>
+  </div>
+
+  <div class="panel">
+    <h2>Run a check</h2>
+    <form id="checkForm">
+      <div class="field">
+        <label for="protocolSlug">Protocol slug</label>
+        <input id="protocolSlug" placeholder="aave-v3" value="aave-v3" />
+      </div>
+      <div class="field">
+        <label for="chain">Chain</label>
+        <input id="chain" placeholder="ethereum" value="ethereum" />
+      </div>
+      <div class="field">
+        <label for="contractAddress">Contract address (optional)</label>
+        <input id="contractAddress" placeholder="0x..." />
+      </div>
+      <button type="submit" id="runBtn" class="btn btn-primary">Run check</button>
+    </form>
+    <div class="config-row">
+      <div class="field">
+        <label for="backendUrl">Backend URL</label>
+        <input id="backendUrl" value="http://localhost:3001" />
+      </div>
+    </div>
+    <div class="status-line" id="statusLine"></div>
+  </div>
+
+  <div class="panel">
+    <h2>Risk consensus</h2>
+    <div class="empty-state" id="emptyState">No check run yet — enter a protocol above and run a check.</div>
+    <div class="tracks" id="tracks">
+      <div class="track-row" data-persona="auditor">
+        <div class="track-label">
+          <span class="track-name"><span class="swatch" style="background:var(--auditor)"></span>The Auditor — code &amp; audit history</span>
+          <span class="track-score" id="score-auditor">—</span>
+        </div>
+        <div class="track"><div class="track-fill" style="background:var(--auditor)" id="fill-auditor"></div><div class="track-dot" style="background:var(--auditor);color:var(--auditor)" id="dot-auditor"></div></div>
+        <div class="scale-ticks"><span>0</span><span>50</span><span>100</span></div>
+        <div class="rationale" style="--accent:var(--auditor)" id="rationale-auditor"></div>
+      </div>
+      <div class="track-row" data-persona="liquidity">
+        <div class="track-label">
+          <span class="track-name"><span class="swatch" style="background:var(--liquidity)"></span>The Liquidity Analyst — TVL &amp; depth</span>
+          <span class="track-score" id="score-liquidity">—</span>
+        </div>
+        <div class="track"><div class="track-fill" style="background:var(--liquidity)" id="fill-liquidity"></div><div class="track-dot" style="background:var(--liquidity);color:var(--liquidity)" id="dot-liquidity"></div></div>
+        <div class="scale-ticks"><span>0</span><span>50</span><span>100</span></div>
+        <div class="rationale" style="--accent:var(--liquidity)" id="rationale-liquidity"></div>
+      </div>
+      <div class="track-row" data-persona="historian">
+        <div class="track-label">
+          <span class="track-name"><span class="swatch" style="background:var(--historian)"></span>The Historian — exploit pattern match</span>
+          <span class="track-score" id="score-historian">—</span>
+        </div>
+        <div class="track"><div class="track-fill" style="background:var(--historian)" id="fill-historian"></div><div class="track-dot" style="background:var(--historian);color:var(--historian)" id="dot-historian"></div></div>
+        <div class="scale-ticks"><span>0</span><span>50</span><span>100</span></div>
+        <div class="rationale" style="--accent:var(--historian)" id="rationale-historian"></div>
+      </div>
+
+      <div class="consensus-readout">
+        <div class="consensus-number" id="consensusNumber">—</div>
+        <div class="consensus-label">consensus risk score</div>
+        <div class="scale-legend">0 = safe &middot; 100 = risky</div>
+        <div class="confidence-badge" id="confidenceBadge"></div>
+        <div class="disagreement-note" id="disagreementNote"></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="panel">
+    <h2>Coverage match</h2>
+    <div class="empty-state" id="coverageEmpty">Run a check above to see coverage options for that chain.</div>
+    <div class="coverage-grid" id="coverageGrid" style="display:none;"></div>
+  </div>
+
+  <div class="disclaimer">This is not financial or insurance advice. Consult each coverage provider's own terms.</div>
+</div>
+
+<script>
+  const PERSONA_KEY_MAP = {
+    "The Auditor": "auditor",
+    "The Liquidity Analyst": "liquidity",
+    "The Historian": "historian",
+  };
+
+  const form = document.getElementById('checkForm');
+  const runBtn = document.getElementById('runBtn');
+  const statusLine = document.getElementById('statusLine');
+  const emptyState = document.getElementById('emptyState');
+  const tracks = document.getElementById('tracks');
+  const coverageEmpty = document.getElementById('coverageEmpty');
+  const coverageGrid = document.getElementById('coverageGrid');
+
+  function setStatus(msg, isError) {
+    statusLine.textContent = msg || '';
+    statusLine.classList.toggle('error', !!isError);
+  }
+
+  function resetTracks() {
+    ['auditor', 'liquidity', 'historian'].forEach((key) => {
+      document.getElementById(`dot-${key}`).style.left = '50%';
+      document.getElementById(`fill-${key}`).style.width = '0%';
+      document.getElementById(`score-${key}`).textContent = '—';
+      document.getElementById(`rationale-${key}`).textContent = '';
+    });
+  }
+
+  function renderConsensus(data) {
+    emptyState.style.display = 'none';
+    tracks.classList.add('visible');
+    resetTracks();
+
+    data.personaBreakdown.forEach((p, i) => {
+      const key = PERSONA_KEY_MAP[p.persona];
+      if (!key) return;
+      setTimeout(() => {
+        document.getElementById(`dot-${key}`).style.left = `${p.score}%`;
+        document.getElementById(`fill-${key}`).style.width = `${p.score}%`;
+        document.getElementById(`score-${key}`).textContent = p.score;
+        document.getElementById(`rationale-${key}`).textContent = p.rationale;
+      }, i * 180);
+    });
+
+    setTimeout(() => {
+      document.getElementById('consensusNumber').textContent = data.consensusScore;
+      const badge = document.getElementById('confidenceBadge');
+      badge.textContent = `${data.confidenceLevel} agreement · σ ${data.standardDeviation}`;
+      badge.className = `confidence-badge ${data.confidenceLevel}`;
+      document.getElementById('disagreementNote').textContent = data.disagreementNote || '';
+    }, 700);
+  }
+
+  function renderCoverage(data) {
+    coverageEmpty.style.display = 'none';
+    coverageGrid.style.display = 'grid';
+    coverageGrid.innerHTML = '';
+
+    if (!data.options || data.options.length === 0) {
+      coverageGrid.innerHTML = '<div class="empty-state">No matching coverage found for this chain.</div>';
+      return;
+    }
+
+    data.options.forEach((opt) => {
+      const card = document.createElement('div');
+      card.className = 'coverage-card';
+      card.innerHTML = `
+        <h3>${opt.provider}</h3>
+        <p>${opt.productType}</p>
+        <p>Typical cost: ${opt.typicalCostBps[0]}–${opt.typicalCostBps[1]} bps</p>
+        ${opt.verificationStatus && opt.verificationStatus.startsWith('NOT') ? `<div class="verify-flag">⚠ unverified — check before relying on this</div>` : ''}
+      `;
+      coverageGrid.appendChild(card);
+    });
+  }
+
+  form.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const backendUrl = document.getElementById('backendUrl').value.trim().replace(/\/$/, '');
+    const protocolSlug = document.getElementById('protocolSlug').value.trim();
+    const chain = document.getElementById('chain').value.trim();
+    const contractAddress = document.getElementById('contractAddress').value.trim();
+
+    if (!protocolSlug && !contractAddress) {
+      setStatus('Enter a protocol slug or contract address.', true);
+      return;
+    }
+
+    runBtn.disabled = true;
+    setStatus('Running three independent checks...');
+
+    try {
+      const riskRes = await fetch(`${backendUrl}/api/dev/risk-consensus-paid`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ protocolSlug: protocolSlug || undefined, chain: chain || undefined, contractAddress: contractAddress || undefined }),
+      });
+      if (!riskRes.ok) {
+        const err = await riskRes.json().catch(() => ({}));
+        throw new Error(err.error || `Backend returned ${riskRes.status}`);
+      }
+      const riskData = await riskRes.json();
+      renderConsensus(riskData);
+
+      if (chain) {
+        const coverageRes = await fetch(`${backendUrl}/api/dev/coverage-match-paid`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ chain }),
+        });
+        if (coverageRes.ok) {
+          renderCoverage(await coverageRes.json());
+        }
+      }
+
+      setStatus('Done.');
+    } catch (err) {
+      setStatus(`Could not complete the check: ${err.message}. Is the backend running at that URL?`, true);
+    } finally {
+      runBtn.disabled = false;
+    }
+  });
+</script>
+</body>
+</html>

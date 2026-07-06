@@ -1,0 +1,632 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Consensus — Three AI analysts. One honest number.</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@500;600;700;800&family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0a0a0d;
+    --bg-elevated: #121218;
+    --bg-card: #16161d;
+    --border: rgba(255,255,255,0.09);
+    --border-strong: rgba(255,255,255,0.16);
+    --text: #f2f0ec;
+    --text-dim: #a4a3ac;
+    --text-faint: #616069;
+    --cream: #f1eee6;
+    --cream-text: #16161a;
+
+    --aurora-purple: #7c6ce8;
+    --aurora-teal: #2fc7ae;
+    --aurora-pink: #d66bc0;
+
+    --auditor: #d9ac48;
+    --liquidity: #35bda8;
+    --historian: #9c82ea;
+
+    --radius-sm: 12px;
+    --radius-md: 20px;
+    --radius-lg: 28px;
+    --radius-pill: 100px;
+  }
+
+  * { box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
+
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Inter', sans-serif;
+    font-size: 16px;
+    line-height: 1.6;
+    overflow-x: hidden;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after { animation-duration: 0.01ms !important; animation-iteration-count: 1 !important; transition-duration: 0.01ms !important; scroll-behavior: auto !important; }
+  }
+
+  h1, h2, h3 { font-family: 'Outfit', sans-serif; margin: 0; letter-spacing: -0.02em; }
+  .mono { font-family: 'IBM Plex Mono', monospace; }
+  a { color: inherit; }
+
+  .wrap { max-width: 1120px; margin: 0 auto; padding: 0 28px; }
+  section { position: relative; }
+
+  /* ---------- aurora background ---------- */
+  .aurora {
+    position: absolute;
+    inset: 0;
+    overflow: hidden;
+    pointer-events: none;
+    z-index: 0;
+  }
+  .aurora .blob {
+    position: absolute;
+    border-radius: 50%;
+    filter: blur(80px);
+    opacity: 0.55;
+    mix-blend-mode: screen;
+  }
+  .aurora .b1 { width: 480px; height: 480px; background: var(--aurora-purple); top: -160px; left: -120px; animation: drift1 22s ease-in-out infinite alternate; }
+  .aurora .b2 { width: 420px; height: 420px; background: var(--aurora-teal); top: -100px; right: -140px; animation: drift2 26s ease-in-out infinite alternate; }
+  .aurora .b3 { width: 380px; height: 380px; background: var(--aurora-pink); top: 160px; left: 30%; animation: drift3 30s ease-in-out infinite alternate; opacity: 0.35; }
+
+  @keyframes drift1 { from { transform: translate(0,0) scale(1); } to { transform: translate(60px, 40px) scale(1.15); } }
+  @keyframes drift2 { from { transform: translate(0,0) scale(1); } to { transform: translate(-50px, 60px) scale(1.1); } }
+  @keyframes drift3 { from { transform: translate(0,0) scale(1); } to { transform: translate(30px, -50px) scale(1.2); } }
+
+  /* ---------- nav ---------- */
+  nav {
+    position: sticky;
+    top: 0;
+    z-index: 50;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 18px 28px;
+    transition: background 300ms ease, backdrop-filter 300ms ease, border-color 300ms ease;
+    border-bottom: 1px solid transparent;
+  }
+  nav.scrolled {
+    background: rgba(10,10,13,0.75);
+    backdrop-filter: blur(14px);
+    border-bottom: 1px solid var(--border);
+  }
+  .brand { display: flex; align-items: center; gap: 8px; font-weight: 700; font-size: 19px; }
+  .brand .dot { width: 9px; height: 9px; border-radius: 50%; background: var(--text); display: inline-block; }
+  .nav-links { display: flex; gap: 28px; font-size: 14px; color: var(--text-dim); }
+  .nav-links a { text-decoration: none; transition: color 200ms ease; }
+  .nav-links a:hover { color: var(--text); }
+  @media (max-width: 760px) { .nav-links { display: none; } }
+
+  /* ---------- buttons ---------- */
+  .btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 13px 24px;
+    border-radius: var(--radius-pill);
+    font-family: 'Inter', sans-serif;
+    font-weight: 600;
+    font-size: 14px;
+    text-decoration: none;
+    cursor: pointer;
+    border: 1px solid transparent;
+    transition: transform 220ms cubic-bezier(0.2,0.9,0.3,1.2), background 200ms ease, border-color 200ms ease;
+  }
+  .btn:hover { transform: translateY(-2px); }
+  .btn-primary { background: var(--text); color: var(--bg); }
+  .btn-primary:hover { background: #fff; }
+  .btn-outline { background: transparent; color: var(--text); border-color: var(--border-strong); }
+  .btn-outline:hover { border-color: var(--text); }
+  .btn-dark { background: var(--bg-elevated); color: var(--text); border-color: var(--border); }
+
+  /* ---------- hero ---------- */
+  .hero {
+    padding: 140px 0 100px;
+    text-align: center;
+  }
+  .eyebrow {
+    display: inline-block;
+    padding: 6px 14px;
+    border-radius: var(--radius-pill);
+    background: var(--bg-elevated);
+    border: 1px solid var(--border);
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: var(--text-dim);
+    margin-bottom: 28px;
+  }
+  .hero h1 {
+    font-size: clamp(40px, 6.5vw, 76px);
+    font-weight: 700;
+    line-height: 1.04;
+    max-width: 880px;
+    margin: 0 auto 24px;
+  }
+  .hero h1 .accent { color: var(--aurora-teal); }
+  .hero p.sub {
+    max-width: 560px;
+    margin: 0 auto 40px;
+    color: var(--text-dim);
+    font-size: 17px;
+  }
+  .hero-ctas { display: flex; gap: 14px; justify-content: center; flex-wrap: wrap; }
+
+  /* ---------- reveal on scroll ---------- */
+  .reveal { opacity: 0; transform: translateY(28px); transition: opacity 700ms cubic-bezier(0.16,1,0.3,1), transform 700ms cubic-bezier(0.16,1,0.3,1); }
+  .reveal.visible { opacity: 1; transform: translateY(0); }
+  .reveal-stagger.visible .stagger-item:nth-child(1) { transition-delay: 0ms; }
+  .reveal-stagger.visible .stagger-item:nth-child(2) { transition-delay: 90ms; }
+  .reveal-stagger.visible .stagger-item:nth-child(3) { transition-delay: 180ms; }
+  .stagger-item { opacity: 0; transform: translateY(20px); transition: opacity 600ms cubic-bezier(0.16,1,0.3,1), transform 600ms cubic-bezier(0.16,1,0.3,1); }
+  .reveal-stagger.visible .stagger-item { opacity: 1; transform: translateY(0); }
+
+  /* ---------- live demo preview (auto-playing) ---------- */
+  .demo-panel {
+    margin: 0 auto;
+    max-width: 720px;
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    padding: 32px;
+    text-align: left;
+    box-shadow: 0 40px 100px -40px rgba(0,0,0,0.6);
+  }
+  .demo-panel .demo-label { font-family: 'IBM Plex Mono', monospace; font-size: 11px; color: var(--text-faint); text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 20px; display: flex; justify-content: space-between; }
+  .demo-track-row { margin-bottom: 18px; }
+  .demo-track-label { display: flex; justify-content: space-between; font-family: 'IBM Plex Mono', monospace; font-size: 12px; margin-bottom: 8px; color: var(--text-dim); }
+  .demo-track-label b { color: var(--text); }
+  .demo-track { position: relative; height: 6px; background: var(--bg-elevated); border-radius: 3px; }
+  .demo-dot { position: absolute; top: 50%; width: 12px; height: 12px; border-radius: 50%; transform: translate(-50%,-50%); transition: left 1200ms cubic-bezier(0.16,1,0.3,1); box-shadow: 0 0 0 4px var(--bg-card), 0 0 16px currentColor; }
+  .demo-consensus { text-align: center; padding-top: 20px; margin-top: 10px; border-top: 1px solid var(--border); }
+  .demo-consensus .num { font-family: 'Outfit', sans-serif; font-weight: 700; font-size: 44px; transition: all 600ms ease; }
+  .demo-consensus .lbl { font-family: 'IBM Plex Mono', monospace; font-size: 11px; color: var(--text-faint); text-transform: uppercase; letter-spacing: 0.08em; margin-top: 4px; }
+
+  /* ---------- cream section ---------- */
+  .cream-section {
+    background: var(--cream);
+    color: var(--cream-text);
+    padding: 110px 0;
+    border-radius: var(--radius-lg) var(--radius-lg) 0 0;
+    margin-top: 60px;
+  }
+  .cream-section h2 { font-size: clamp(32px, 4.5vw, 52px); text-align: center; max-width: 700px; margin: 0 auto 20px; }
+  .cream-section p.sub { text-align: center; max-width: 520px; margin: 0 auto 44px; color: #57564f; font-size: 16px; }
+  .cream-section .btn-primary { background: var(--cream-text); color: var(--cream); }
+  .cream-cta-wrap { text-align: center; }
+
+  /* ---------- persona cards ---------- */
+  .section-dark { background: var(--bg); padding: 100px 0; }
+  .section-head { text-align: center; max-width: 620px; margin: 0 auto 56px; }
+  .section-head h2 { font-size: clamp(30px, 4vw, 44px); margin-bottom: 14px; }
+  .section-head p { color: var(--text-dim); font-size: 16px; }
+
+  .persona-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; }
+  @media (max-width: 860px) { .persona-grid { grid-template-columns: 1fr; } }
+
+  .persona-card {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-md);
+    padding: 28px;
+    transition: transform 300ms cubic-bezier(0.16,1,0.3,1), border-color 300ms ease, box-shadow 300ms ease;
+    position: relative;
+    overflow: hidden;
+  }
+  .persona-card::before {
+    content: "";
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 3px;
+    background: var(--accent);
+    transform: scaleX(0);
+    transform-origin: left;
+    transition: transform 400ms ease;
+  }
+  .persona-card:hover { transform: translateY(-6px); border-color: var(--border-strong); box-shadow: 0 30px 60px -30px rgba(0,0,0,0.5); }
+  .persona-card:hover::before { transform: scaleX(1); }
+  .persona-tag {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 11px;
+    letter-spacing: 0.06em;
+    color: var(--accent);
+    margin-bottom: 18px;
+  }
+  .persona-tag .dot { width: 6px; height: 6px; border-radius: 50%; background: var(--accent); }
+  .persona-card .icon { width: 34px; height: 34px; margin-bottom: 16px; color: var(--accent); }
+  .persona-card h3 { font-size: 20px; margin-bottom: 10px; }
+  .persona-card p { color: var(--text-dim); font-size: 14px; margin: 0; }
+
+  /* ---------- stack diagram ---------- */
+  .stack-section { padding: 100px 0; }
+  .stack-diagram { max-width: 640px; margin: 0 auto; }
+  .stack-layer {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 16px 0;
+    border-bottom: 1px dashed var(--border);
+  }
+  .stack-layer:last-child { border-bottom: none; }
+  .stack-layer .name { display: flex; align-items: center; gap: 12px; font-weight: 600; font-size: 15px; }
+  .stack-layer .plane {
+    width: 44px; height: 20px;
+    background: var(--bg-card);
+    border: 1px solid var(--border-strong);
+    transform: perspective(200px) rotateX(55deg);
+    border-radius: 4px;
+    flex-shrink: 0;
+    transition: transform 400ms ease, background 400ms ease;
+  }
+  .stack-layer.highlight .plane { background: var(--text); border-color: var(--text); }
+  .stack-layer.highlight .name { color: var(--text); }
+  .stack-layer:not(.highlight) .name { color: var(--text-dim); }
+  .stack-layer .role { font-family: 'IBM Plex Mono', monospace; font-size: 12px; color: var(--text-faint); }
+
+  /* ---------- use case carousel ---------- */
+  .carousel-section { padding: 100px 0; }
+  .carousel-tabs { display: flex; justify-content: center; gap: 10px; margin-bottom: 40px; flex-wrap: wrap; }
+  .carousel-tab {
+    padding: 9px 18px;
+    border-radius: var(--radius-pill);
+    background: var(--bg-elevated);
+    border: 1px solid var(--border);
+    color: var(--text-dim);
+    font-size: 13px;
+    cursor: pointer;
+    transition: all 250ms ease;
+  }
+  .carousel-tab.active { background: var(--text); color: var(--bg); border-color: var(--text); }
+
+  .carousel-stage { position: relative; max-width: 680px; margin: 0 auto; min-height: 220px; }
+  .carousel-slide {
+    position: absolute; inset: 0;
+    opacity: 0; transform: translateY(10px);
+    transition: opacity 450ms ease, transform 450ms ease;
+    pointer-events: none;
+    text-align: center;
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-md);
+    padding: 40px 32px;
+  }
+  .carousel-slide.active { opacity: 1; transform: translateY(0); pointer-events: auto; }
+  .carousel-slide .cat { font-family: 'IBM Plex Mono', monospace; font-size: 12px; text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 14px; }
+  .carousel-slide h3 { font-size: 24px; margin-bottom: 12px; }
+  .carousel-slide p { color: var(--text-dim); font-size: 15px; max-width: 460px; margin: 0 auto; }
+
+  .dots { display: flex; justify-content: center; gap: 8px; margin-top: 24px; }
+  .dots span { width: 22px; height: 3px; border-radius: 2px; background: var(--border-strong); cursor: pointer; transition: background 250ms ease, width 250ms ease; }
+  .dots span.active { background: var(--text); width: 34px; }
+
+  /* ---------- CTA banner ---------- */
+  .cta-banner {
+    margin: 0 28px 100px;
+    max-width: 1064px;
+    margin-left: auto; margin-right: auto;
+    background: linear-gradient(135deg, var(--bg-card), var(--bg-elevated));
+    border: 1px solid var(--border-strong);
+    border-radius: var(--radius-lg);
+    padding: 70px 40px;
+    text-align: center;
+    position: relative;
+    overflow: hidden;
+  }
+  .cta-banner::before {
+    content: "";
+    position: absolute;
+    width: 500px; height: 500px;
+    background: radial-gradient(circle, var(--aurora-purple), transparent 70%);
+    top: -250px; left: 50%; transform: translateX(-50%);
+    opacity: 0.25;
+    filter: blur(40px);
+  }
+  .cta-banner h2 { font-size: clamp(28px, 4vw, 42px); margin-bottom: 16px; position: relative; }
+  .cta-banner p { color: var(--text-dim); max-width: 460px; margin: 0 auto 32px; position: relative; }
+  .cta-banner .btn { position: relative; }
+
+  /* ---------- footer ---------- */
+  footer { padding: 80px 0 40px; border-top: 1px solid var(--border); position: relative; overflow: hidden; }
+  .footer-watermark {
+    font-family: 'Outfit', sans-serif;
+    font-weight: 800;
+    font-size: clamp(60px, 14vw, 180px);
+    color: transparent;
+    -webkit-text-stroke: 1px var(--border-strong);
+    text-align: center;
+    white-space: nowrap;
+    margin-bottom: -30px;
+    user-select: none;
+  }
+  .footer-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 32px; margin-top: 40px; }
+  @media (max-width: 760px) { .footer-grid { grid-template-columns: 1fr 1fr; } }
+  .footer-col h4 { font-family: 'IBM Plex Mono', monospace; font-size: 11px; text-transform: uppercase; letter-spacing: 0.08em; color: var(--aurora-purple); margin-bottom: 14px; }
+  .footer-col a, .footer-col span { display: block; color: var(--text-dim); text-decoration: none; font-size: 14px; margin-bottom: 10px; }
+  .footer-col a:hover { color: var(--text); }
+  .footer-bottom { text-align: center; color: var(--text-faint); font-size: 12px; margin-top: 50px; }
+</style>
+</head>
+<body>
+
+<nav id="nav">
+  <div class="brand"><span class="dot"></span>Consensus</div>
+  <div class="nav-links">
+    <a href="#how-it-works">How it works</a>
+    <a href="#stack">Architecture</a>
+    <a href="#use-cases">Use cases</a>
+  </div>
+  <a href="dashboard.html" class="btn btn-dark">Launch dashboard →</a>
+</nav>
+
+<section class="hero">
+  <div class="aurora"><div class="blob b1"></div><div class="blob b2"></div><div class="blob b3"></div></div>
+  <div class="wrap" style="position:relative; z-index:1;">
+    <div class="eyebrow">OKX AI Genesis Hackathon · Agent Service Provider</div>
+    <h1>Three AI analysts.<br>One <span class="accent">honest</span> number.</h1>
+    <p class="sub">Consensus scores any DeFi protocol using three independent AI personas who never see each other's answers. Agreement means the score is reliable — whatever it says. Disagreement means treat that number with caution, regardless of what it says — the uncertainty itself is information worth acting on.</p>
+    <div class="hero-ctas">
+      <a href="dashboard.html" class="btn btn-primary">Launch dashboard</a>
+      <a href="#how-it-works" class="btn btn-outline">See how it works ↓</a>
+    </div>
+  </div>
+</section>
+
+<section class="section-dark reveal" id="demo-preview">
+  <div class="wrap">
+    <div class="demo-panel">
+      <div class="demo-label"><span>LIVE READOUT · aave-v3</span><span id="demoStatus">running check...</span></div>
+      <div class="demo-track-row">
+        <div class="demo-track-label"><span>The Auditor</span><b id="ds-auditor">—</b></div>
+        <div class="demo-track"><div class="demo-dot" id="dd-auditor" style="background:#d9ac48;color:#d9ac48;left:50%"></div></div>
+      </div>
+      <div class="demo-track-row">
+        <div class="demo-track-label"><span>The Liquidity Analyst</span><b id="ds-liquidity">—</b></div>
+        <div class="demo-track"><div class="demo-dot" id="dd-liquidity" style="background:#35bda8;color:#35bda8;left:50%"></div></div>
+      </div>
+      <div class="demo-track-row">
+        <div class="demo-track-label"><span>The Historian</span><b id="ds-historian">—</b></div>
+        <div class="demo-track"><div class="demo-dot" id="dd-historian" style="background:#9c82ea;color:#9c82ea;left:50%"></div></div>
+      </div>
+      <div class="demo-consensus">
+        <div class="num" id="demoConsensus">—</div>
+        <div class="lbl" id="demoConfidence">consensus risk score</div>
+        <div style="font-family:'IBM Plex Mono', monospace; font-size:10px; color:var(--text-faint); margin-top:6px;">0 = safe &middot; 100 = risky &nbsp;|&nbsp; "agreement" = how closely the personas land, not how safe it is</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="cream-section reveal">
+  <div class="wrap">
+    <h2>DeFi risk scoring is usually one black box, or one Twitter thread.</h2>
+    <p class="sub">Consensus replaces both with three independently-reasoning AI analysts, each with a fixed lens they can't deviate from — then shows you exactly where they land, together or apart.</p>
+    <div class="cream-cta-wrap"><a href="dashboard.html" class="btn btn-primary">Try it on a real protocol</a></div>
+  </div>
+</section>
+
+<section class="section-dark" id="how-it-works">
+  <div class="wrap">
+    <div class="section-head reveal">
+      <h2>Three lenses. Zero collusion.</h2>
+      <p>Each persona only ever sees the same raw evidence packet — never another persona's score or reasoning. That isolation is what makes agreement mean something.</p>
+    </div>
+    <div class="persona-grid reveal-stagger reveal">
+      <div class="persona-card stagger-item" style="--accent: #d9ac48;">
+        <div class="persona-tag"><span class="dot"></span>CODE &amp; AUDIT HISTORY</div>
+        <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M9 12l2 2 4-4M12 3l8 4v5c0 5-3.5 8.5-8 9-4.5-.5-8-4-8-9V7l8-4z"/></svg>
+        <h3>The Auditor</h3>
+        <p>Weighs audit coverage, unpatched findings, admin-key risk, and time-in-production — nothing else. Says "insufficient evidence" when the audit trail is thin, rather than guessing safe.</p>
+      </div>
+      <div class="persona-card stagger-item" style="--accent: #35bda8;">
+        <div class="persona-tag"><span class="dot"></span>TVL &amp; LIQUIDITY DEPTH</div>
+        <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M3 17l5-6 4 4 8-10M14 5h6v6"/></svg>
+        <h3>The Liquidity Analyst</h3>
+        <p>Reads TVL trend, whale concentration, and withdrawal velocity. Flags thin or fleeing liquidity even on a protocol with a spotless audit.</p>
+      </div>
+      <div class="persona-card stagger-item" style="--accent: #9c82ea;">
+        <div class="persona-tag"><span class="dot"></span>EXPLOIT PATTERN MATCH</div>
+        <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M12 8v5l3 2M21 12a9 9 0 11-9-9 9 9 0 019 9z"/></svg>
+        <h3>The Historian</h3>
+        <p>Compares architecture and fork lineage against known exploits. Catches structural risk the other two personas structurally never look at.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="stack-section" id="stack">
+  <div class="wrap">
+    <div class="section-head reveal">
+      <h2>Built to be called, not just visited</h2>
+      <p>The same consensus engine powers a human dashboard, an A2MCP tool call, and an A2A task — one core, three surfaces.</p>
+    </div>
+    <div class="stack-diagram reveal">
+      <div class="stack-layer">
+        <div class="name"><div class="plane"></div>OKX.AI Marketplace</div>
+        <div class="role">Distribution</div>
+      </div>
+      <div class="stack-layer">
+        <div class="name"><div class="plane"></div>A2A · A2MCP</div>
+        <div class="role">Agent Interface</div>
+      </div>
+      <div class="stack-layer highlight">
+        <div class="name"><div class="plane"></div>Consensus Engine</div>
+        <div class="role">Persona Deliberation</div>
+      </div>
+      <div class="stack-layer">
+        <div class="name"><div class="plane"></div>Groq · gpt-oss-120b</div>
+        <div class="role">Independent Reasoning</div>
+      </div>
+      <div class="stack-layer">
+        <div class="name"><div class="plane"></div>DeFiLlama · Audit History</div>
+        <div class="role">Evidence Layer</div>
+      </div>
+      <div class="stack-layer">
+        <div class="name"><div class="plane"></div>Ethereum · Arbitrum · X Layer</div>
+        <div class="role">On-chain Data</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="carousel-section" id="use-cases">
+  <div class="wrap">
+    <div class="section-head reveal">
+      <h2>Who's actually asking Consensus</h2>
+    </div>
+    <div class="carousel-tabs reveal" id="carouselTabs">
+      <div class="carousel-tab active" data-slide="0">Before you allocate</div>
+      <div class="carousel-tab" data-slide="1">Shopping for coverage</div>
+      <div class="carousel-tab" data-slide="2">Another agent, via A2MCP</div>
+    </div>
+    <div class="carousel-stage reveal">
+      <div class="carousel-slide active" data-slide="0">
+        <div class="cat" style="color:#35bda8;">PORTFOLIO MANAGERS</div>
+        <h3>Check before you commit capital</h3>
+        <p>Run any protocol through all three lenses before allocating. A tight consensus means real confidence; a wide split means read the rationale before you move.</p>
+      </div>
+      <div class="carousel-slide" data-slide="1">
+        <div class="cat" style="color:#d9ac48;">COVERAGE SHOPPERS</div>
+        <h3>See what's insurable, and what it costs</h3>
+        <p>Pair the risk score with a live match against current DeFi coverage providers for the same chain — Nexus Mutual, InsurAce, and others — with typical cost ranges.</p>
+      </div>
+      <div class="carousel-slide" data-slide="2">
+        <div class="cat" style="color:#9c82ea;">OTHER AGENTS</div>
+        <h3>Call it programmatically, mid-decision</h3>
+        <p>Any agent on OKX.AI can call get_risk_consensus over A2MCP, or hand Consensus a natural-language task over A2A, and fold the structured result straight into its own logic.</p>
+      </div>
+    </div>
+    <div class="dots" id="carouselDots">
+      <span class="active" data-slide="0"></span>
+      <span data-slide="1"></span>
+      <span data-slide="2"></span>
+    </div>
+  </div>
+</section>
+
+<div class="cta-banner reveal">
+  <h2>See where the personas agree — and where they don't.</h2>
+  <p>Run a live check against Ethereum, Arbitrum, or X Layer in the dashboard.</p>
+  <a href="dashboard.html" class="btn btn-primary">Launch dashboard →</a>
+</div>
+
+<footer>
+  <div class="footer-watermark">CONSENSUS</div>
+  <div class="wrap">
+    <div class="footer-grid">
+      <div class="footer-col">
+        <h4>Product</h4>
+        <a href="dashboard.html">Dashboard</a>
+        <a href="#how-it-works">Risk consensus</a>
+        <a href="#use-cases">Coverage match</a>
+      </div>
+      <div class="footer-col">
+        <h4>Build</h4>
+        <span>A2MCP: get_risk_consensus</span>
+        <span>A2A task lifecycle</span>
+      </div>
+      <div class="footer-col">
+        <h4>Chains</h4>
+        <span>Ethereum</span>
+        <span>Arbitrum</span>
+        <span>X Layer</span>
+      </div>
+      <div class="footer-col">
+        <h4>About</h4>
+        <span>OKX AI Genesis Hackathon</span>
+        <span>Agent Service Provider</span>
+      </div>
+    </div>
+    <div class="footer-bottom">Consensus is informational only — not financial or insurance advice. Built for the OKX AI Genesis Hackathon.</div>
+  </div>
+</footer>
+
+<script>
+  // nav shrink-on-scroll
+  const nav = document.getElementById('nav');
+  window.addEventListener('scroll', () => {
+    nav.classList.toggle('scrolled', window.scrollY > 20);
+  });
+
+  // scroll reveal
+  const revealEls = document.querySelectorAll('.reveal');
+  const io = new IntersectionObserver((entries) => {
+    entries.forEach((entry) => {
+      if (entry.isIntersecting) {
+        entry.target.classList.add('visible');
+        io.unobserve(entry.target);
+      }
+    });
+  }, { threshold: 0.15 });
+  revealEls.forEach((el) => io.observe(el));
+
+  // ---- auto-playing hero demo (canned data, loops through a few cases) ----
+  const demoCases = [
+    { name: "aave-v3", auditor: 15, liquidity: 10, historian: 28, consensus: 18, confidence: "high agreement" },
+    { name: "unnamed-fork", auditor: 85, liquidity: 74, historian: 70, consensus: 76, confidence: "high agreement" },
+    { name: "novel-oracle-protocol", auditor: 55, liquidity: 20, historian: 68, consensus: 48, confidence: "moderate agreement — personas disagree" },
+  ];
+  let demoIndex = 0;
+  const demoStatus = document.getElementById('demoStatus');
+  const demoConsensus = document.getElementById('demoConsensus');
+  const demoConfidence = document.getElementById('demoConfidence');
+
+  function playDemoCase() {
+    const c = demoCases[demoIndex];
+    demoStatus.textContent = `checking ${c.name}...`;
+    ['auditor', 'liquidity', 'historian'].forEach((key, i) => {
+      setTimeout(() => {
+        document.getElementById(`dd-${key}`).style.left = `${c[key]}%`;
+        document.getElementById(`ds-${key}`).textContent = c[key];
+      }, i * 220);
+    });
+    setTimeout(() => {
+      demoConsensus.textContent = c.consensus;
+      demoConfidence.textContent = c.confidence;
+      demoStatus.textContent = `checked ${c.name}`;
+    }, 900);
+
+    demoIndex = (demoIndex + 1) % demoCases.length;
+  }
+  playDemoCase();
+  setInterval(playDemoCase, 4200);
+
+  // ---- use-case carousel ----
+  const tabs = document.querySelectorAll('.carousel-tab');
+  const slides = document.querySelectorAll('.carousel-slide');
+  const dots = document.querySelectorAll('.dots span');
+  let carouselIndex = 0;
+  let carouselTimer;
+
+  function setSlide(i) {
+    carouselIndex = i;
+    tabs.forEach((t) => t.classList.toggle('active', +t.dataset.slide === i));
+    slides.forEach((s) => s.classList.toggle('active', +s.dataset.slide === i));
+    dots.forEach((d) => d.classList.toggle('active', +d.dataset.slide === i));
+  }
+
+  function nextSlide() { setSlide((carouselIndex + 1) % slides.length); }
+
+  function resetCarouselTimer() {
+    clearInterval(carouselTimer);
+    carouselTimer = setInterval(nextSlide, 5000);
+  }
+
+  [...tabs, ...dots].forEach((el) => {
+    el.addEventListener('click', () => { setSlide(+el.dataset.slide); resetCarouselTimer(); });
+  });
+  resetCarouselTimer();
+</script>
+</body>
+</html>

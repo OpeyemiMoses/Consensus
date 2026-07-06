@@ -1,0 +1,32 @@
+[
+  {
+    "provider": "Nexus Mutual",
+    "coversChains": ["ethereum"],
+    "coversProtocolTypes": ["lending", "amm", "staking"],
+    "productType": "Smart Contract Cover",
+    "typicalCostBps": [260, 800],
+    "notes": "Cost varies significantly by protocol risk category; requires mutual membership (KYC) to purchase.",
+    "exclusions": ["Oracle failure not tied to a smart contract bug", "Governance attacks in some product versions"],
+    "verificationStatus": "confirmed active as of July 2026 — one of the two most consistently cited platforms in current DeFi insurance coverage."
+  },
+  {
+    "provider": "InsurAce",
+    "coversChains": ["ethereum", "bsc", "polygon", "arbitrum"],
+    "coversProtocolTypes": ["lending", "amm", "bridge"],
+    "productType": "Smart Contract Cover / Portfolio Cover",
+    "typicalCostBps": [200, 700],
+    "notes": "Offers portfolio-level cover bundling multiple protocols.",
+    "exclusions": ["Stablecoin depeg (separate product)", "Frontend/UI exploits"],
+    "verificationStatus": "confirmed active as of July 2026, though note it took a real reputational/capital hit after paying out on the 2022 UST depeg — worth being accurate about that history rather than presenting it as untested."
+  },
+  {
+    "provider": "Sherlock",
+    "coversChains": ["ethereum", "arbitrum", "optimism"],
+    "coversProtocolTypes": ["lending", "amm", "derivatives"],
+    "productType": "Sherlock Shield (part of a bundled lifecycle-security offering: dev-stage AI review, audits, bounties, then optional coverage)",
+    "typicalCostBps": [200, 250],
+    "notes": "Coverage is protocol-purchased, not bought directly by end users — availability depends on whether the specific protocol has a Sherlock Shield policy. Caps around $10M per covered engagement. Backs protocols responsible for $250B+ in active TVL as of 2026 (Aave, Morpho, LayerZero, and others).",
+    "exclusions": ["Non-smart-contract risk (custody, key management)"],
+    "verificationStatus": "confirmed active as of July 2026 — publishing quarterly security reports and active development through at least May 2026. Cost/product details refreshed from current docs."
+  }
+]
