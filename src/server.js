@@ -47,12 +47,29 @@ app.use((req, res, next) => {
 app.use("/api", riskConsensusRouter);
 app.use("/api", coverageMatchRouter);
 app.use("/api", a2aRouter);
-app.use("/api", devPaidProxyRouter);
 
 // httpMcpRouter.js defines its route internally as POST /mcp, so mounting
 // it at /api here gives the full path /api/mcp — matching what testMcp.js
 // (and any real A2MCP caller) expects.
 app.use("/api", mcpRouter);
+
+// The dev-buyer-proxy holds a private key (DEV_BUYER_PRIVATE_KEY) that pays
+// your own paywalled endpoints — it exists ONLY so your own dashboard can
+// demo the payment flow locally without a key ever touching the browser.
+// It must NEVER be exposed on a public/hosted deployment: anyone who found
+// it could trigger payments from that key. Gated behind an explicit flag,
+// defaulting to off, on top of never mounting in production regardless of
+// the flag — belt and suspenders.
+const devProxyExplicitlyEnabled = process.env.ENABLE_DEV_PAYMENT_PROXY === "true";
+const isProduction = process.env.NODE_ENV === "production";
+if (devProxyExplicitlyEnabled && !isProduction) {
+  console.log("[dev-paid-proxy] ENABLED — local-only payment testing route is live at /api/dev/*.");
+  app.use("/api", devPaidProxyRouter);
+} else if (devProxyExplicitlyEnabled && isProduction) {
+  console.error("[dev-paid-proxy] ENABLE_DEV_PAYMENT_PROXY=true was set but NODE_ENV=production — refusing to mount it. This route holds a private key and must never run on a public host.");
+} else {
+  console.log("[dev-paid-proxy] disabled (set ENABLE_DEV_PAYMENT_PROXY=true for local-only payment testing).");
+}
 
 app.listen(PORT, () => {
   console.log(`Consensus backend listening on port ${PORT}`);
