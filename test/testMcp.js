@@ -5,24 +5,35 @@ import { StreamableHTTPClientTransport } from "@modelcontextprotocol/sdk/client/
 import { ListToolsResultSchema, CallToolResultSchema } from "@modelcontextprotocol/sdk/types.js";
 
 /**
- * Tests the A2MCP surface now that it runs over Streamable HTTP (mounted on
- * the main Express app at POST /api/mcp) instead of stdio. This matches how
- * it will actually be called once hosted — OKX's A2MCP requirements are
- * explicit that this must be a public HTTPS endpoint, which stdio can never
- * satisfy (nothing external can spawn a process on your host over the
- * internet). This test spawns the real server exactly like `npm start`
- * would, then calls it over HTTP exactly like a real agent would.
+ * Tests the A2MCP surface over Streamable HTTP.
+ *
+ * Two modes:
+ *  - LOCAL (default): spawns src/server.js as a child process, waits for
+ *    /health, tests against http://localhost:PORT/api/mcp, kills the
+ *    process when done.
+ *  - REMOTE: set TARGET_URL to a full base URL (e.g.
+ *    https://your-app.up.railway.app) to test an already-running, publicly
+ *    hosted server instead. No process is spawned or killed in this mode —
+ *    we're proving the real deployed server answers real MCP calls over
+ *    the public internet, exactly as OKX would call it.
+ *
+ * Usage:
+ *   node test/testMcp.js                                   # local
+ *   TARGET_URL=https://your-app.up.railway.app node test/testMcp.js   # remote
  */
 
+const REMOTE_TARGET = process.env.TARGET_URL;
 const PORT = process.env.PORT || 3001;
-const MCP_URL = `http://localhost:${PORT}/api/mcp`;
+const BASE_URL = REMOTE_TARGET || `http://localhost:${PORT}`;
+const MCP_URL = `${BASE_URL}/api/mcp`;
+const HEALTH_URL = `${BASE_URL}/health`;
 
 function waitForServer(url, timeoutMs = 8000) {
   const start = Date.now();
   return new Promise((resolve, reject) => {
     const tryOnce = async () => {
       try {
-        const res = await fetch(url.replace("/api/mcp", "/health"));
+        const res = await fetch(url);
         if (res.ok) return resolve();
       } catch (_) {
         // not up yet
@@ -37,24 +48,31 @@ function waitForServer(url, timeoutMs = 8000) {
 }
 
 async function main() {
-  if (!process.env.GROQ_API_KEY) {
+  if (!REMOTE_TARGET && !process.env.GROQ_API_KEY) {
     console.error("Missing GROQ_API_KEY. Copy .env.example to .env and add your key before running this test.");
     process.exit(1);
   }
 
-  console.log("Spawning the real server (src/server.js) as a child process...\n");
-  const serverProcess = spawn("node", ["src/server.js"], {
-    stdio: ["ignore", "pipe", "pipe"],
-    env: process.env,
-  });
+  let serverProcess = null;
 
-  serverProcess.stdout.on("data", (d) => process.stdout.write(`[server] ${d}`));
-  serverProcess.stderr.on("data", (d) => process.stderr.write(`[server] ${d}`));
+  if (REMOTE_TARGET) {
+    console.log(`Testing REMOTE server at ${BASE_URL} — nothing will be spawned locally.\n`);
+  } else {
+    console.log("Spawning the real server (src/server.js) as a child process...\n");
+    serverProcess = spawn("node", ["src/server.js"], {
+      stdio: ["ignore", "pipe", "pipe"],
+      env: process.env,
+    });
+    serverProcess.stdout.on("data", (d) => process.stdout.write(`[server] ${d}`));
+    serverProcess.stderr.on("data", (d) => process.stderr.write(`[server] ${d}`));
+  }
 
   try {
-    await waitForServer(MCP_URL);
+    console.log(`Checking health at ${HEALTH_URL} ...`);
+    await waitForServer(HEALTH_URL, REMOTE_TARGET ? 15000 : 8000);
     console.log("✓ Server is up.\n");
 
+    console.log(`Connecting to MCP endpoint at ${MCP_URL} ...`);
     const transport = new StreamableHTTPClientTransport(new URL(MCP_URL));
     const client = new Client({ name: "consensus-mcp-test-client", version: "1.0.0" }, { capabilities: {} });
     await client.connect(transport);
@@ -89,9 +107,9 @@ async function main() {
     console.log(`  ✓ correctly returned isError: true`);
 
     await client.close();
-    console.log("\n✓ All A2MCP-over-HTTP tests passed.");
+    console.log(`\n✓ All A2MCP-over-HTTP tests passed against ${BASE_URL}.`);
   } finally {
-    serverProcess.kill();
+    if (serverProcess) serverProcess.kill();
   }
 }
 
