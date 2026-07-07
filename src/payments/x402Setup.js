@@ -104,6 +104,16 @@ export async function getPaymentMiddleware() {
           description: "DeFi coverage provider match for a given chain",
           mimeType: "application/json",
         },
+        "POST /api/mcp": {
+          accepts: [{
+            scheme: "exact",
+            network: NETWORK,
+            payTo: PAY_TO,
+            price: process.env.X402_PRICE_MCP || "$0.05",
+          }],
+          description: "Consensus Multi-Agent Risk & Coverage Match MCP server",
+          mimeType: "application/json",
+        },
       },
       resourceServer,
     );

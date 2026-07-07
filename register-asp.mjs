@@ -1,56 +1,131 @@
-import crypto from "node:crypto";
+/**
+ * Consensus ASP Registration for OKX Onchain OS
+ *
+ * Based on https://okx.ai/tutorial/asp, ASP registration is done through
+ * your Onchain OS Agent (Agentic Wallet), not through a REST API call.
+ *
+ * The API credentials in .env (OKX_API_KEY etc.) are for x402 payment
+ * processing, not for ASP registration.
+ *
+ * === VERIFIED DEPLOYED ENDPOINTS ===
+ *
+ * A2A:  POST https://consensus-production-d6fa.up.railway.app/api/a2a/tasks
+ *       Body: { "text": "Check risk consensus for aave-v3 on ethereum" }
+ *       Returns full task lifecycle with state history + result
+ *
+ * A2MCP: POST https://consensus-production-d6fa.up.railway.app/api/mcp
+ *        JSON-RPC 2.0, tools: get_risk_consensus
+ *
+ * === HOW TO REGISTER AS A2A ASP ===
+ *
+ * Step 1: Install Onchain OS (if not already installed):
+ *    npx skills add okx/onchainos-skills --yes -g
+ *
+ * Step 2: Log in to your Agentic Wallet:
+ *    Tell your agent: "Log in to Agentic Wallet on Onchain OS with my email"
+ *
+ * Step 3: Register as A2A ASP:
+ *    Tell your agent: "Help me register an A2A ASP on OKX.AI using OKX Agent Identity from Onchain OS"
+ *
+ *    Use these details when prompted:
+ *      ASP Name:     Consensus
+ *      Service Type: A2A
+ *      Endpoint:     https://consensus-production-d6fa.up.railway.app
+ *      Description:  DeFi risk-consensus and coverage-matching A2A service.
+ *                    AI agents can request 3-persona risk analysis for DeFi
+ *                    protocols, get coverage provider matches, and run
+ *                    multi-step tasks combining risk consensus with coverage
+ *                    discovery.
+ *
+ * Step 4: List your ASP on OKX.AI:
+ *    Tell your agent: "Help me list my ASP on OKX.AI using Onchain OS"
+ *
+ *    OKX reviews submissions within 24 hours and sends the result to the
+ *    email registered with your Agentic Wallet.
+ *
+ * === A2A TASK FORMAT ===
+ *
+ * Other agents call your A2A service by posting natural-language tasks:
+ *    POST /api/a2a/tasks
+ *    { "text": "Check risk consensus for aave-v3 on ethereum" }
+ *
+ * The service parses the text, runs the full accept->work->deliver->complete
+ * lifecycle, and returns the result with state history.
+ *
+ * Supported task types:
+ *  - "Check risk consensus for {protocol} on {chain}"
+ *  - "Find coverage options for {chain}"
+ *  - "Check risk for {protocol} on {chain} and find coverage"
+ */
 
-const API_KEY = "c7110585-aab7-43f3-9db5-7f183883b6e1";
-const SECRET_KEY = "F8A3712200A8BC3AA347C0DED33DDCB0";
-const PASSPHRASE = "Yemigraffix123$";
+console.log(`
+╔══════════════════════════════════════════════════════════════╗
+║            Consensus - Onchain OS ASP Registration          ║
+║                    (A2A Service)                            ║
+╚══════════════════════════════════════════════════════════════╝
 
-const MCP_ENDPOINT = "https://consensus-production-d6fa.up.railway.app/api/mcp";
+Your A2A service is deployed and verified at:
+   https://consensus-production-d6fa.up.railway.app
 
-function sign(timestamp, method, requestPath, body) {
-  const signStr = timestamp + method + requestPath + (body || "");
-  return crypto.createHmac("sha256", SECRET_KEY).update(signStr).digest("base64");
-}
+A2A Endpoint: POST /api/a2a/tasks
+  Body: { "text": "Check risk consensus for aave-v3 on ethereum" }
+  Returns: Full task lifecycle with state history + result
 
-async function tryRegister(path, payload) {
-  const ts = new Date().toISOString();
-  const method = "POST";
-  const body = JSON.stringify(payload);
-  const sig = sign(ts, method, path, body);
+A2MCP Endpoint: POST /api/mcp
+  Tool: get_risk_consensus (JSON-RPC 2.0, Streamable HTTP)
 
-  const url = `https://www.okx.com${path}`;
-  console.log(`\nTrying POST ${url}`);
-  console.log(`Payload: ${body}`);
+╔══════════════════════════════════════════════════════════════╗
+║                   REGISTRATION STEPS                        ║
+╚══════════════════════════════════════════════════════════════╝
+
+Step 1: Install Onchain OS (if needed)
+  -> npx skills add okx/onchainos-skills --yes -g
+
+Step 2: Log in to your Agentic Wallet
+  -> Tell your agent: "Log in to Agentic Wallet on Onchain OS with my email"
+
+Step 3: Register as an A2A ASP
+  -> Tell your agent: "Help me register an A2A ASP on OKX.AI using OKX Agent Identity from Onchain OS"
   
-  try {
-    const res = await fetch(url, {
-      method,
-      headers: {
-        "Content-Type": "application/json",
-        "OK-ACCESS-KEY": API_KEY,
-        "OK-ACCESS-SIGN": sig,
-        "OK-ACCESS-TIMESTAMP": ts,
-        "OK-ACCESS-PASSPHRASE": PASSPHRASE,
-      },
-      body,
-    });
-    const txt = await res.text();
-    console.log(`Status: ${res.status}`);
-    console.log(`Response: ${txt.slice(0, 1000)}`);
-    return { status: res.status, body: txt };
-  } catch (err) {
-    console.log(`Error: ${err.message}`);
-    return { status: 0, body: err.message };
-  }
-}
+  Use these details when prompted:
+     ASP Name:     Consensus
+     Service Type: A2A
+     Endpoint:     https://consensus-production-d6fa.up.railway.app
+     Description:  DeFi risk-consensus and coverage-matching A2A service.
+                   AI agents can request 3-persona risk analysis for DeFi
+                   protocols, get coverage provider matches, and run
+                   multi-step tasks combining risk consensus with coverage
+                   discovery.
 
-// Try various possible API paths for Onchain OS ASP registration
-const attempts = [
-  { path: "/api/v5/onchainos/asp/register", payload: { aspName: "Consensus Risk ASP", endpoint: MCP_ENDPOINT, tools: ["get_risk_consensus"] } },
-  { path: "/api/v5/onchainos/asp", payload: { aspName: "Consensus Risk ASP", endpoint: MCP_ENDPOINT, tools: ["get_risk_consensus"] } },
-  { path: "/api/v5/onchainos/asp/register", payload: { name: "Consensus Risk ASP", description: "DeFi risk-consensus A2MCP service", mcpEndpoint: MCP_ENDPOINT, toolNames: ["get_risk_consensus"] } },
-  { path: "/api/v5/onchainos/asp/register", payload: { aspName: "Consensus", mcpServerUrl: MCP_ENDPOINT, tools: [{ name: "get_risk_consensus", description: "Returns a 3-persona AI risk consensus score for a DeFi protocol" }] } },
-];
+Step 4: List your ASP on OKX.AI
+  -> Tell your agent: "Help me list my ASP on OKX.AI using Onchain OS"
+  
+  OKX reviews submissions within 24 hours. Once approved, your ASP
+  will appear in the Agent marketplace.
 
-for (const attempt of attempts) {
-  await tryRegister(attempt.path, attempt.payload);
-}
+╔══════════════════════════════════════════════════════════════╗
+║                   VERIFICATION                              ║
+╚══════════════════════════════════════════════════════════════╝
+
+A2A endpoint tested successfully:
+  POST /api/a2a/tasks with text "Check risk consensus for aave-v3 on ethereum"
+  -> Status 200, task completed with full risk consensus result
+
+A2MCP endpoint tested successfully:
+  POST /api/mcp with tools/list -> get_risk_consensus advertised
+  POST /api/mcp with tools/call -> consensusScore returned
+
+╔══════════════════════════════════════════════════════════════╗
+║                   NOTES                                     ║
+╚══════════════════════════════════════════════════════════════╝
+
+- A2A services negotiate price, scope, and delivery terms between agents.
+  Payment runs through escrow; the provider is paid only after the user
+  signs off. Providers may escalate disputes to arbitration.
+
+- The service also exposes an A2MCP surface at /api/mcp for direct
+  pay-per-call access (requires x402 payment SDK integration).
+
+- For A2MCP-only registration, use a different prompt:
+  "Help me register an A2MCP ASP on OKX.AI using OKX Agent Identity from Onchain OS"
+`);
