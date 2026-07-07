@@ -3,6 +3,7 @@ import { Server } from "@modelcontextprotocol/sdk/server/index.js";
 import { StreamableHTTPServerTransport } from "@modelcontextprotocol/sdk/server/streamableHttp.js";
 import { ListToolsRequestSchema, CallToolRequestSchema } from "@modelcontextprotocol/sdk/types.js";
 import { runRiskConsensus } from "../core/runRiskConsensus.js";
+import { runCoverageMatch } from "../core/runCoverageMatch.js";
 
 /**
  * A2MCP surface for Consensus — mounted on the same public Express app as
@@ -45,19 +46,45 @@ server.setRequestHandler(ListToolsRequestSchema, async () => ({
         required: [],
       },
     },
+    {
+      name: "get_coverage_match",
+      description:
+        "Matches a DeFi protocol with available insurance/coverage options from curated providers (Nexus Mutual, InsurAce, etc.). Returns a list of coverage products for the given chain and optional protocol type. Informational only — not financial or insurance advice.",
+      inputSchema: {
+        type: "object",
+        properties: {
+          chain: {
+            type: "string",
+            description: "Chain name, e.g. 'ethereum', 'arbitrum', 'x-layer'",
+          },
+          protocolType: {
+            type: "string",
+            description: "Optional. Protocol type to filter by, e.g. 'lending', 'dex', 'bridge'",
+          },
+        },
+        required: ["chain"],
+      },
+    },
   ],
 }));
 
 server.setRequestHandler(CallToolRequestSchema, async (request) => {
-  if (request.params.name !== "get_risk_consensus") {
-    throw new Error(`Unknown tool: ${request.params.name}`);
-  }
-
-  const { contractAddress, protocolSlug, chain } = request.params.arguments || {};
+  const args = request.params.arguments || {};
 
   try {
-    const result = await runRiskConsensus({ contractAddress, protocolSlug, chain });
-    return { content: [{ type: "text", text: JSON.stringify(result) }] };
+    if (request.params.name === "get_risk_consensus") {
+      const { contractAddress, protocolSlug, chain } = args;
+      const result = await runRiskConsensus({ contractAddress, protocolSlug, chain });
+      return { content: [{ type: "text", text: JSON.stringify(result) }] };
+    }
+
+    if (request.params.name === "get_coverage_match") {
+      const { chain, protocolType } = args;
+      const result = runCoverageMatch({ chain, protocolType });
+      return { content: [{ type: "text", text: JSON.stringify(result) }] };
+    }
+
+    throw new Error(`Unknown tool: ${request.params.name}`);
   } catch (err) {
     return {
       content: [{ type: "text", text: JSON.stringify({ error: err.message }) }],
