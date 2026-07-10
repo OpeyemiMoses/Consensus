@@ -82,6 +82,18 @@ export async function getPaymentMiddleware() {
 
     console.log(`[x402] Payments ENABLED on network ${NETWORK}, paying to ${PAY_TO}`);
 
+    // decimals: 6 must be in the `extra` object — the x402-core SDK reads
+    // `requirements.extra?.decimals` (chunk-NYKB44OI.mjs:286). A top-level
+    // `decimals` field is silently ignored, leaving the OKX task system unable
+    // to resolve the token amount (tokenResolveError during x402-check).
+    const MCP_ACCEPTS = [{
+      scheme: "exact",
+      network: NETWORK,
+      payTo: PAY_TO,
+      price: process.env.X402_PRICE_MCP || "$0.05",
+      extra: { decimals: 6 },
+    }];
+
     cachedMiddleware = paymentMiddleware(
       {
         "POST /api/risk-consensus": {
@@ -90,6 +102,7 @@ export async function getPaymentMiddleware() {
             network: NETWORK,
             payTo: PAY_TO,
             price: process.env.X402_PRICE_RISK_CONSENSUS || "$0.05",
+            extra: { decimals: 6 },
           }],
           description: "3-persona AI risk consensus score for a DeFi protocol",
           mimeType: "application/json",
@@ -100,17 +113,24 @@ export async function getPaymentMiddleware() {
             network: NETWORK,
             payTo: PAY_TO,
             price: process.env.X402_PRICE_COVERAGE_MATCH || "$0.01",
+            extra: { decimals: 6 },
           }],
           description: "DeFi coverage provider match for a given chain",
           mimeType: "application/json",
         },
+        // Both GET and POST are registered so that automated validation probes
+        // (which may use GET or POST without a business body) correctly receive
+        // a 402 challenge rather than a 404. The MCP SDK only mounts POST, so
+        // the GET variant is purely for the payment gate — it will 402 before
+        // ever reaching the MCP handler, which is the desired behaviour for
+        // any unpaid probe.
         "POST /api/mcp": {
-          accepts: [{
-            scheme: "exact",
-            network: NETWORK,
-            payTo: PAY_TO,
-            price: process.env.X402_PRICE_MCP || "$0.05",
-          }],
+          accepts: MCP_ACCEPTS,
+          description: "Consensus Multi-Agent Risk & Coverage Match MCP server",
+          mimeType: "application/json",
+        },
+        "GET /api/mcp": {
+          accepts: MCP_ACCEPTS,
           description: "Consensus Multi-Agent Risk & Coverage Match MCP server",
           mimeType: "application/json",
         },

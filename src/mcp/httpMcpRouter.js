@@ -112,4 +112,19 @@ router.post("/mcp", async (req, res) => {
   await transport.handleRequest(req, res, req.body);
 });
 
+// GET /mcp is registered so that automated x402 validation probes that issue a
+// GET (rather than POST) still hit the payment middleware and receive a proper
+// 402 challenge. When payments are disabled, it returns a discovery hint.
+// When payments ARE enabled, the middleware gates the route before this handler
+// ever executes.
+router.get("/mcp", (req, res) => {
+  res.status(200).json({
+    service: "consensus-mcp",
+    version: "0.1.0",
+    transport: "Streamable HTTP (POST /api/mcp)",
+    info: "Send JSON-RPC 2.0 POST requests to this endpoint. A valid x402 payment header is required when payments are enabled.",
+  });
+});
+
+
 export default router;
