@@ -24,7 +24,7 @@ app.use(express.json());
 // Force Accept header for /api/mcp requests so MCP transport handles them
 // correctly even if clients (like task-402-pay) do not send standard headers.
 app.use((req, res, next) => {
-  if (req.path === "/api/mcp") {
+  if (req.path.includes("mcp")) {
     req.headers["accept"] = "application/json, text/event-stream";
   }
   next();
