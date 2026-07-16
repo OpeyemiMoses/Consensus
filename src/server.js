@@ -21,6 +21,15 @@ app.set("trust proxy", true);
 app.use(cors());
 app.use(express.json());
 
+// Force Accept header for /api/mcp requests so MCP transport handles them
+// correctly even if clients (like task-402-pay) do not send standard headers.
+app.use((req, res, next) => {
+  if (req.path === "/api/mcp") {
+    req.headers["accept"] = "application/json, text/event-stream";
+  }
+  next();
+});
+
 app.get("/health", (req, res) => res.json({ status: "ok", service: "consensus" }));
 
 // Payment middleware setup is async (it validates OKX credentials against
