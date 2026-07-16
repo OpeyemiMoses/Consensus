@@ -1,4 +1,4 @@
-﻿import "dotenv/config";
+import "dotenv/config";
 import express from "express";
 import cors from "cors";
 import riskConsensusRouter from "./routes/riskConsensus.js";
@@ -10,6 +10,13 @@ import { getPaymentMiddleware } from "./payments/x402Setup.js";
 
 const app = express();
 const PORT = process.env.PORT || 3001;
+
+// Railway (and most cloud platforms) terminate TLS at their edge proxy and
+// forward traffic internally as plain HTTP, setting X-Forwarded-Proto:https.
+// Without this, Express ignores that header and reconstructs req.protocol as
+// "http", which makes the x402 payment challenge emit an http:// resource URL
+// instead of https:// — causing payment clients to reject the challenge.
+app.set("trust proxy", true);
 
 app.use(cors());
 app.use(express.json());
