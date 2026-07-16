@@ -109,6 +109,8 @@ const router = Router();
 
 router.post("/mcp", async (req, res) => {
   await ensureConnected();
+  // Ensure the request headers satisfy StreamableHTTPServerTransport's requirement
+  req.headers["accept"] = "application/json, text/event-stream";
   await transport.handleRequest(req, res, req.body);
 });
 
