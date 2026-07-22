@@ -107,11 +107,44 @@ async function ensureConnected() {
 
 const router = Router();
 
+// Some x402 buyer clients (e.g. onchainos's task-402-pay) pay for an A2MCP
+// service and then replay the raw service-params object as the POST body,
+// instead of wrapping it in a JSON-RPC 2.0 `tools/call` envelope the way the
+// MCP transport requires. Rather than hard-failing those callers with a 400,
+// detect the raw-params shape and translate it into a proper tools/call
+// request ourselves, inferring which tool was meant from the field names
+// present (the two tools' input schemas don't overlap) and normalizing the
+// one alias we've observed in the wild ("protocol" -> protocolSlug/contractAddress).
+function coerceToJsonRpc(body) {
+  if (body && body.jsonrpc === "2.0" && body.method) return body;
+
+  const args = { ...(body || {}) };
+  if (typeof args.protocol === "string" && !args.protocolSlug && !args.contractAddress) {
+    if (args.protocol.startsWith("0x")) args.contractAddress = args.protocol;
+    else args.protocolSlug = args.protocol;
+    delete args.protocol;
+  }
+
+  const isRiskConsensus = "contractAddress" in args || "protocolSlug" in args;
+  const isCoverageMatch = "protocolType" in args || (!isRiskConsensus && "chain" in args);
+  const toolName = isRiskConsensus ? "get_risk_consensus" : isCoverageMatch ? "get_coverage_match" : null;
+
+  if (!toolName) return body;
+
+  return {
+    jsonrpc: "2.0",
+    id: body?.id ?? 1,
+    method: "tools/call",
+    params: { name: toolName, arguments: args },
+  };
+}
+
 router.post("/mcp", async (req, res) => {
   await ensureConnected();
   // Ensure the request headers satisfy StreamableHTTPServerTransport's requirement
   req.headers["accept"] = "application/json, text/event-stream";
-  await transport.handleRequest(req, res, req.body);
+  const body = coerceToJsonRpc(req.body);
+  await transport.handleRequest(req, res, body);
 });
 
 // GET /mcp is registered so that automated x402 validation probes that issue a
